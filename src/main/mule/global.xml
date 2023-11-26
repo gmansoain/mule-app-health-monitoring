@@ -18,7 +18,7 @@ http://www.mulesoft.org/schema/mule/api-gateway http://www.mulesoft.org/schema/m
 		<http:request-connection protocol="HTTPS" host="products-system-api-17ekvx.a671fi.gbr-e1.cloudhub.io" />
 	</http:request-config>
 	<http:request-config name="HTTP_Request_Inventory_sAPI" doc:name="HTTP Request configuration" doc:id="c257613b-20ed-4ca2-978e-f819b1f33c74" >
-		<http:request-connection host="inventory-system-api-17ekvx.a671fi.gbr-e1.cloudhub.io" />
+		<http:request-connection host="inventory-system-api-prod-17ekvx.a671fi.gbr-e1.cloudhub.io" protocol="HTTPS"/>
 	</http:request-config>
 	<configuration-properties doc:name="Configuration properties" doc:id="3becffa8-d633-4792-9e78-10b2fda2854d" file="properties/properties-${env}.yaml" />
 	<http:request-config name="HTTP_Request_Slack" doc:name="HTTP Request configuration" doc:id="b31c7064-5e7e-46cc-955c-3a1484e9b2d8" basePath="/${slack.path}" >
