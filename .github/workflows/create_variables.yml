@@ -1,0 +1,16 @@
+name: Create Project variables
+on:
+  workflow_dispatch:
+
+jobs:
+  createVariables:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name:
+      env:
+        GITHUB_TOKEN: ${{ secrets.GON_GITHUB_TOKEN }}
+      run: |
+        gh variable set -f .github/repo/repo_variables.txt
+        gh variable set --env Development -f .github/repo/dev_variables.txt
+        gh variable set --env Production -f .github/repo/prod_variables.txt
