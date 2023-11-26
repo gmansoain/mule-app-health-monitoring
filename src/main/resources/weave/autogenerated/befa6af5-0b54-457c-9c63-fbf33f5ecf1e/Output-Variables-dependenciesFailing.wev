@@ -1,0 +1,4 @@
+%dw 2.0
+
+type auto_befa6af5_0b54_457c_9c63_fbf33f5ecf1e_Output_Variables_dependenciesFailing = String
+

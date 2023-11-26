@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd">
+	<flow name="rest-api-health-monitoring" doc:id="5857d16c-2f63-491e-b31e-177b7ee9223d" >
+		<flow-ref doc:name="check-dependencies" doc:id="5aa47b88-fdfd-4782-9973-2677252e5513" name="check-dependencies" />
+		<set-payload value="#[vars.dependencyList]" doc:name="Set Payload" doc:id="a83fcf06-c03a-4c3d-a38c-22ac55e6143d" />
+	</flow>
+	<flow name="scheduler-health-monitoring" doc:id="98bbc239-9938-413d-a2ca-20ae0c6f30ae" initialState="started">
+		<scheduler doc:name="Scheduler" doc:id="e7709a8a-dbba-4279-b2a8-cbbd89beae86" >
+			<scheduling-strategy >
+				<fixed-frequency frequency="${schedulerFrequency}" timeUnit="SECONDS"/>
+			</scheduling-strategy>
+		</scheduler>
+		<flow-ref doc:name="check-dependencies" doc:id="52248603-16ae-4b22-96b8-7557b13401cf" name="check-dependencies"/>
+		<choice doc:name="Choice" doc:id="e9c4e599-323a-46b7-ad3c-3514936c9919">
+			<when expression='#[vars.status == "OK"]'>
+				<set-payload value="#[vars.dependencyList]" doc:name="Set Payload" doc:id="e1fa8585-181e-486a-953d-9258dd200217" />
+			</when>
+			<otherwise>
+				<set-variable value='#[%dw 2.0&#10;output application/json&#10;var failures = vars.dependencyList.status find  "DOWN"&#10;---&#10;failures map (&#10;    vars.dependencyList[$].name&#10;) joinBy  ", "]' doc:name="dependencyFailing" doc:id="e122815b-0b83-4bdf-be12-d70014606c29" variableName="dependencyFailing" />
+				<flow-ref doc:name="sendNotifications" doc:id="1ac7f7b9-9fd8-489e-9773-ffcac325e177" name="sendNotifications" />
+			</otherwise>
+		</choice>
+	</flow>
+	
+		<flow name="slack-slash-command" doc:id="3254e5d3-4b1e-48cc-a15c-b9061251be75" >
+		<http:listener doc:name="Listener" doc:id="19f78004-4d9e-425f-9a43-67514a929f91" config-ref="HTTP_Listener_config" path="/slack/status" allowedMethods="POST"/>
+		<flow-ref doc:name="check-dependencies" doc:id="4f37ef97-1c53-43e0-a4f6-cdc11627d988" name="check-dependencies"/>
+		<set-payload value="#[%dw 2.0&#10;output application/json&#10;---&#10;{&#10;	&quot;blocks&quot;: [&#10;		{&#10;			&quot;type&quot;: &quot;context&quot;,&#10;			&quot;elements&quot;: [&#10;				{&#10;					&quot;type&quot;: &quot;plain_text&quot;,&#10;					&quot;text&quot;: &quot;Here's the status of your Application Network&quot;,&#10;					&quot;emoji&quot;: true&#10;				}&#10;			]&#10;		},&#10;		{&#10;			&quot;type&quot;: &quot;rich_text&quot;,&#10;			&quot;elements&quot;: [&#10;				{&#10;					&quot;type&quot;: &quot;rich_text_section&quot;,&#10;					&quot;elements&quot;: [&#10;						{&#10;							&quot;type&quot;: &quot;text&quot;,&#10;							&quot;text&quot;: &quot;API Name: &quot;,&#10;							&quot;style&quot;: {&#10;								&quot;bold&quot;: true&#10;							}&#10;						},&#10;						{&#10;							&quot;type&quot;: &quot;text&quot;,&#10;							&quot;text&quot;: vars.dependencyList[0].name&#10;						}&#10;					]&#10;				}&#10;			]&#10;		},&#10;		{&#10;			&quot;type&quot;: &quot;rich_text&quot;,&#10;			&quot;elements&quot;: [&#10;				{&#10;					&quot;type&quot;: &quot;rich_text_section&quot;,&#10;					&quot;elements&quot;: [&#10;						{&#10;							&quot;type&quot;: &quot;text&quot;,&#10;							&quot;text&quot;: &quot;Status: &quot;,&#10;							&quot;style&quot;: {&#10;								&quot;bold&quot;: true&#10;							}&#10;						},&#10;						{&#10;							&quot;type&quot;: &quot;text&quot;,&#10;							&quot;text&quot;: vars.dependencyList[0].status&#10;						}&#10;					]&#10;				}&#10;			]&#10;		},&#10;		{&#10;			&quot;type&quot;: &quot;divider&quot;&#10;		},&#10;		{&#10;			&quot;type&quot;: &quot;rich_text&quot;,&#10;			&quot;elements&quot;: [&#10;				{&#10;					&quot;type&quot;: &quot;rich_text_section&quot;,&#10;					&quot;elements&quot;: [&#10;						{&#10;							&quot;type&quot;: &quot;text&quot;,&#10;							&quot;text&quot;: &quot;API Name: &quot;,&#10;							&quot;style&quot;: {&#10;								&quot;bold&quot;: true&#10;							}&#10;						},&#10;						{&#10;							&quot;type&quot;: &quot;text&quot;,&#10;							&quot;text&quot;: vars.dependencyList[1].name&#10;						}&#10;					]&#10;				}&#10;			]&#10;		},&#10;		{&#10;			&quot;type&quot;: &quot;rich_text&quot;,&#10;			&quot;elements&quot;: [&#10;				{&#10;					&quot;type&quot;: &quot;rich_text_section&quot;,&#10;					&quot;elements&quot;: [&#10;						{&#10;							&quot;type&quot;: &quot;text&quot;,&#10;							&quot;text&quot;: &quot;Status: &quot;,&#10;							&quot;style&quot;: {&#10;								&quot;bold&quot;: true&#10;							}&#10;						},&#10;						{&#10;							&quot;type&quot;: &quot;text&quot;,&#10;							&quot;text&quot;: vars.dependencyList[1].status&#10;						}&#10;					]&#10;				}&#10;			]&#10;		},&#10;		{&#10;			&quot;type&quot;: &quot;divider&quot;&#10;		},&#10;		{&#10;			&quot;type&quot;: &quot;rich_text&quot;,&#10;			&quot;elements&quot;: [&#10;				{&#10;					&quot;type&quot;: &quot;rich_text_section&quot;,&#10;					&quot;elements&quot;: [&#10;						{&#10;							&quot;type&quot;: &quot;text&quot;,&#10;							&quot;text&quot;: &quot;API Name: &quot;,&#10;							&quot;style&quot;: {&#10;								&quot;bold&quot;: true&#10;							}&#10;						},&#10;						{&#10;							&quot;type&quot;: &quot;text&quot;,&#10;							&quot;text&quot;: vars.dependencyList[2].name&#10;						}&#10;					]&#10;				}&#10;			]&#10;		},&#10;		{&#10;			&quot;type&quot;: &quot;rich_text&quot;,&#10;			&quot;elements&quot;: [&#10;				{&#10;					&quot;type&quot;: &quot;rich_text_section&quot;,&#10;					&quot;elements&quot;: [&#10;						{&#10;							&quot;type&quot;: &quot;text&quot;,&#10;							&quot;text&quot;: &quot;Status: &quot;,&#10;							&quot;style&quot;: {&#10;								&quot;bold&quot;: true&#10;							}&#10;						},&#10;						{&#10;							&quot;type&quot;: &quot;text&quot;,&#10;							&quot;text&quot;: vars.dependencyList[2].status&#10;						}&#10;					]&#10;				}&#10;			]&#10;		},&#10;		{&#10;			&quot;type&quot;: &quot;divider&quot;&#10;		},&#10;		{&#10;			&quot;type&quot;: &quot;rich_text&quot;,&#10;			&quot;elements&quot;: [&#10;				{&#10;					&quot;type&quot;: &quot;rich_text_section&quot;,&#10;					&quot;elements&quot;: [&#10;						{&#10;							&quot;type&quot;: &quot;text&quot;,&#10;							&quot;text&quot;: &quot;API Name: &quot;,&#10;							&quot;style&quot;: {&#10;								&quot;bold&quot;: true&#10;							}&#10;						},&#10;						{&#10;							&quot;type&quot;: &quot;text&quot;,&#10;							&quot;text&quot;: vars.dependencyList[3].name&#10;						}&#10;					]&#10;				}&#10;			]&#10;		},&#10;		{&#10;			&quot;type&quot;: &quot;rich_text&quot;,&#10;			&quot;elements&quot;: [&#10;				{&#10;					&quot;type&quot;: &quot;rich_text_section&quot;,&#10;					&quot;elements&quot;: [&#10;						{&#10;							&quot;type&quot;: &quot;text&quot;,&#10;							&quot;text&quot;: &quot;Status: &quot;,&#10;							&quot;style&quot;: {&#10;								&quot;bold&quot;: true&#10;							}&#10;						},&#10;						{&#10;							&quot;type&quot;: &quot;text&quot;,&#10;							&quot;text&quot;: vars.dependencyList[3].status&#10;						}&#10;					]&#10;				}&#10;			]&#10;		}&#10;	]&#10;}]" doc:name="Set Payload" doc:id="56c9496e-e143-4cc3-89ee-7a3ec1edb956" />
+	</flow>
+	<sub-flow name="check-dependencies" doc:id="377506c7-9f3b-4ab1-b338-a4f88916369e" >
+		<scatter-gather doc:name="Scatter-Gather" doc:id="fcb2d1f3-2713-4392-b821-0e4d4a5649fb" >
+			<route >
+				<flow-ref doc:name="check dependency Salesforce sAPI" doc:id="e108dea0-3e7b-4840-94e5-b0fe5c804ba2" name="check-dependency-Salesforce-sAPI" />
+			</route>
+			<route >
+				<flow-ref doc:name="check dependency SAP sAPI" doc:id="7cb5bf51-252a-43df-a60f-607d040643a5" name="check-dependency-SAP-sAPI" />
+			</route>
+			<route >
+				<flow-ref doc:name="check dependency Products sapi" doc:id="2d882fff-14c7-4dff-a8f4-5a1308f229ff" name="check-dependency-Products-sAPI"/>
+			</route>
+			<route >
+				<flow-ref doc:name="check dependency Inventory sAPI" doc:id="fac05b53-fe4b-45c6-98d6-77be6f8e4cf6" name="check-dependency-Inventory-sAPI"/>
+			</route>
+		</scatter-gather>
+		<set-variable value="#[%dw 2.0&#10;output application/json&#10;---&#10;[&#10;	vars.dependency_salesforce_sapi,&#10;	vars.dependency_sap_sapi,&#10;	vars.dependency_products_sapi,&#10;	vars.dependency_inventory_sapi&#10;]]" doc:name="dependencyList" doc:id="b617ff13-161e-470f-b6e5-3f91b36ad739" variableName="dependencyList"/>
+		<ee:transform doc:name="Transform Message" doc:id="d231674c-f7be-45cf-a801-1b8b8c3299ff">
+			<ee:message>
+			</ee:message>
+			<ee:variables>
+				<ee:set-variable variableName="status"><![CDATA[%dw 2.0
+fun getDependencyStatus(dependencyResponse) = if(sizeOf(dependencyResponse.status find "UP") == sizeOf(dependencyResponse))
+    "OK"
+else if (sizeOf(dependencyResponse.status find "DOWN") == sizeOf(dependencyResponse))
+    "OFFLINE"
+else
+    "DEGRADED"
+
+output application/json
+---
+getDependencyStatus(vars.dependencyList)
+]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+	</sub-flow>
+	<sub-flow name="check-dependency-Salesforce-sAPI" doc:id="3398122a-f5f2-4fb8-838e-308d247db1c0" >
+		<try doc:name="Try" doc:id="847d6257-b5b2-435f-9bbe-1a2be5252847" >
+			<http:request method="GET" doc:name="Request" doc:id="7add68f1-21d6-474c-a421-a70fcfc79e80" path="/ready" config-ref="HTTP_Request_Salesforce_sAPI"/>
+			<logger level="INFO" doc:name="Logger" doc:id="a8ab440b-9b19-4711-8705-089347415d2d" message="#[payload]"/>
+			<error-handler >
+				<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="5cd30c15-0d1a-478d-bed1-670665fad068" type="ANY">
+					<set-payload value='#[%dw 2.0&#10;output application/json&#10;---&#10;{&#10;	name: "Salesforce System API",&#10;	status: "DOWN"&#10;}]' doc:name="Set Payload" doc:id="bb0fd818-d646-48d8-8644-d689086722d9" />
+				</on-error-continue>
+			</error-handler>
+		</try>
+		<choice doc:name="Choice" doc:id="bb821dbe-62fb-4af5-b20b-f88d8534fe88" >
+			<when expression='#[payload.status == "OK"]'>
+				<set-variable value='#[%dw 2.0&#10;output application/json&#10;---&#10;{&#10;	name: "Salesforce System API",&#10;	status: "UP"&#10;}]' doc:name="Set dependency_salesforce_sapi to UP" doc:id="17136057-7cc4-4458-ba30-c0b5340f3417" variableName="dependency_salesforce_sapi" />
+			</when>
+			<otherwise >
+				<set-variable value='#[%dw 2.0&#10;output application/json&#10;---&#10;{&#10;	name: "Salesforce System API",&#10;	status: "DOWN"&#10;}]' doc:name="Set dependency_salesforce_sapi to DOWN" doc:id="1c053323-898c-4e78-a228-5fa956930f6d" variableName="dependency_salesforce_sapi"/>
+			</otherwise>
+		</choice>
+	</sub-flow>
+	<sub-flow name="check-dependency-Products-sAPI" doc:id="32ece471-7f08-4681-acfe-f5ab25f31da4" >
+		<try doc:name="Try" doc:id="d0d917d6-e943-4aa6-b121-47f7c9487184" >
+			<http:request method="GET" doc:name="Request" doc:id="66b66b2e-c11e-4b66-b111-a3edf00c6a61" path="/ready" config-ref="HTTP_Request_Products_sAPI"/>
+			<logger level="INFO" doc:name="Logger" doc:id="0558310e-0b0a-457e-8bf0-f3ba23be1d81" message="#[payload]"/>
+			<error-handler >
+				<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="f53f0dd7-34d5-4739-9932-b38a57c2242e" type="ANY">
+					<set-payload value='#[%dw 2.0&#10;output application/json&#10;---&#10;{&#10;	name: "Products System API",&#10;	status: "DOWN"&#10;}]' doc:name="Set Payload" doc:id="b5d2dcdb-4d56-4ec1-932d-ce3bd209bf37" />
+				</on-error-continue>
+			</error-handler>
+		</try>
+		<choice doc:name="Choice" doc:id="3db73591-492c-4a37-a8ff-54da1670a8f3" >
+			<when expression='#[payload.status == "OK"]'>
+				<set-variable value='#[%dw 2.0&#10;output application/json&#10;---&#10;{&#10;	name: "Products System API",&#10;	status: "UP"&#10;}]' doc:name="Set dependency_products_sapi to UP" doc:id="0921da22-4014-4955-9db8-8d8ab26dce7d" variableName="dependency_products_sapi" />
+			</when>
+			<otherwise >
+				<set-variable value='#[%dw 2.0&#10;output application/json&#10;---&#10;{&#10;	name: "Products System API",&#10;	status: "DOWN"&#10;}]' doc:name="Set dependency_products_sapi to DOWN" doc:id="024881fa-485e-4c11-b863-cd5d127de70f" variableName="dependency_products_sapi"/>
+			</otherwise>
+		</choice>
+	</sub-flow>
+	<sub-flow name="check-dependency-SAP-sAPI" doc:id="2fbc22da-7da8-4f1d-a812-4bfeb6674dfa" >
+		<try doc:name="Try" doc:id="3082e548-7ffb-4a60-8285-c2bb0e2e8b89" >
+			<http:request method="GET" doc:name="Request" doc:id="4fbd81a7-3476-460e-9036-91b6de7a0b45" path="/ready" config-ref="HTTP_Request_SAP_sAPI"/>
+			<logger level="INFO" doc:name="Logger" doc:id="b65f81ff-dfb0-472c-b58a-98011f656bf7" message="#[payload]"/>
+			<error-handler >
+				<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="1c910772-684a-4c9e-a3c4-34e05c948bd8" type="ANY">
+					<set-payload value='#[%dw 2.0&#10;output application/json&#10;---&#10;{&#10;	name: "SAP System API",&#10;	status: "DOWN"&#10;}]' doc:name="Set Payload" doc:id="287d6067-440c-4c08-b775-a57084c0c31b" />
+				</on-error-continue>
+			</error-handler>
+		</try>
+		<choice doc:name="Choice" doc:id="74ee0de1-5eef-434f-a3a4-57c183dacac0" >
+			<when expression='#[payload.status == "OK"]'>
+				<set-variable value='#[%dw 2.0&#10;output application/json&#10;---&#10;{&#10;	name: "SAP System API",&#10;	status: "UP"&#10;}]' doc:name="Set dependency_sap_sapi to UP" doc:id="5e95204c-4b45-4973-899e-9b1c1d0a2fc8" variableName="dependency_sap_sapi" />
+			</when>
+			<otherwise >
+				<set-variable value='#[%dw 2.0&#10;output application/json&#10;---&#10;{&#10;	name: "SAP System API",&#10;	status: "DOWN"&#10;}]' doc:name="Set dependency_sap_sapi to DOWN" doc:id="dbd2cb90-deb9-4267-baa4-bc8574872de5" variableName="dependency_sap_sapi"/>
+			</otherwise>
+		</choice>
+	</sub-flow>
+	<sub-flow name="check-dependency-Inventory-sAPI" doc:id="7ffc1de2-2073-4d82-90bf-1a98391774a5" >
+		<try doc:name="Try" doc:id="1bec8f4d-e557-4d8f-8365-41d5cb3afc64" >
+			<http:request method="GET" doc:name="Request" doc:id="bc81b67d-197e-4811-b37d-d8b28868b064" path="/ready" config-ref="HTTP_Request_Inventory_sAPI"/>
+			<logger level="INFO" doc:name="Logger" doc:id="43ceef1e-5845-4bdf-8632-afd0be158f81" message="#[payload]"/>
+			<error-handler >
+				<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="4339d1a2-2a4d-47a5-8794-104226d77751" type="ANY">
+					<set-payload value='#[%dw 2.0&#10;output application/json&#10;---&#10;{&#10;	name: "Inventory System API",&#10;	status: "DOWN"&#10;}]' doc:name="Set Payload" doc:id="cb82f884-c6d6-420d-a6f5-d8b28a4680ab" />
+				</on-error-continue>
+			</error-handler>
+		</try>
+		<choice doc:name="Choice" doc:id="25487db9-4837-46bd-b681-32a1ce6ca0bc" >
+			<when expression='#[payload.status == "OK"]'>
+				<set-variable value='#[%dw 2.0&#10;output application/json&#10;---&#10;{&#10;	name: "Inventory System API",&#10;	status: "UP"&#10;}]' doc:name="Set dependency_inventory_sapi to UP" doc:id="df0b23e7-59da-4497-9785-2252ec831a22" variableName="dependency_inventory_sapi" />
+			</when>
+			<otherwise >
+				<set-variable value='#[%dw 2.0&#10;output application/json&#10;---&#10;{&#10;	name: "Inventory System API",&#10;	status: "DOWN"&#10;}]' doc:name="Set dependency_inventory_sapi to DOWN" doc:id="176af083-e315-46d4-812c-1800a5d417c6" variableName="dependency_inventory_sapi"/>
+			</otherwise>
+		</choice>
+	</sub-flow>
+	<sub-flow name="sendNotifications" doc:id="befa6af5-0b54-457c-9c63-fbf33f5ecf1e" >
+		<set-payload value='#[%dw 2.0&#10;output application/json&#10;---&#10;{&#10;  "channel": {&#10;    "email": p("enableEmail") as Boolean,&#10;    "slack": p("enableSlack") as Boolean,&#10;    "sms": p("enableSMS") as Boolean,&#10;    "whatsapp": p("enableWhatsapp") as Boolean&#10;  },&#10;  "messages": {&#10;    "email": {&#10;      "from": "no-reply@example.com",&#10;      "to": "gmarcos@salesforce.com",&#10;      "subject": "Mule Apps Monitoring Alert: The status of the system is " ++ vars.status,&#10;      "message": "The following apps/dependencies are failing: " ++ vars.dependencyFailing&#10;    },&#10;    "slack": {&#10;      "channel": "mule-health-checks",&#10;      "message": "The following apps/dependencies are failing: " ++ vars.dependencyFailing&#10;      },&#10;    "sms": {&#10;      "fromNumber": "+447869543211",&#10;      "toNumber": "+34699835420",&#10;      "message": "The following apps/dependencies are failing: " ++ vars.dependencyFailing&#10;    },&#10;    "whatsapp": {&#10;      "fromNumber": "+447849543211",&#10;      "toNumber": "+34646835720",&#10;      "message": "The following apps/dependencies are failing: " ++ vars.dependencyFailing&#10;    }&#10;  }&#10;}]' doc:name="Set Payload" doc:id="7b2f7796-bf33-45a2-8efa-c5151375c84b" />
+		<logger level="INFO" doc:name="Logger" doc:id="a544bb01-fd00-4e86-8b54-3553e31323d9" message="#[payload]"/>
+		<http:request method="POST" doc:name="Request" doc:id="18f69172-a44e-4b90-acd1-9df381605d2f" config-ref="HTTP_Request_Notifications_API" path="${notifications-papi.path}">
+			<http:headers ><![CDATA[#[%dw 2.0
+output application/java
+---
+{
+	"client_secret" : p("notifications-papi.client_secret"),
+	"client_id" : p("notifications-papi.client_id")
+}]]]></http:headers>
+		</http:request>
+		<ee:transform doc:name="Transform Message" doc:id="110bd49c-d350-47d8-8f07-54f1045c4ef9" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</sub-flow>
+
+</mule>

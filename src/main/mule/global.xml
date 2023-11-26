@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:api-gateway="http://www.mulesoft.org/schema/mule/api-gateway" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/api-gateway http://www.mulesoft.org/schema/mule/api-gateway/current/mule-api-gateway.xsd">
+	<http:request-config name="HTTP_Request_Salesforce_sAPI" doc:name="HTTP Request configuration" doc:id="af855d31-8110-45d9-b62c-685df80cd5bd" >
+		<http:request-connection protocol="HTTPS" host="salesforce-system-api-17ekvx.a671fi.gbr-e1.cloudhub.io" />
+	</http:request-config>
+	<http:request-config name="HTTP_Request_Notifications_API" doc:name="HTTP Request configuration" doc:id="1a62d37e-b3cc-4a0e-9bf1-76c170d1ece6" basePath="${notifications-papi.basePath}" >
+		<http:request-connection protocol="HTTPS" host="${notifications-papi.host}" />
+	</http:request-config>
+	<http:request-config name="HTTP_Request_SAP_sAPI" doc:name="HTTP Request configuration" doc:id="604db434-3bc3-4578-8a54-cc55d8f835bc" >
+		<http:request-connection protocol="HTTPS" host="sap-system-api-17ekvx.a671fi.gbr-e1.cloudhub.io" />
+	</http:request-config>
+	<http:request-config name="HTTP_Request_Products_sAPI" doc:name="HTTP Request configuration" doc:id="dd7cba2d-4c08-4170-8edf-4fa04f874a49" >
+		<http:request-connection protocol="HTTPS" host="products-system-api-17ekvx.a671fi.gbr-e1.cloudhub.io" />
+	</http:request-config>
+	<http:request-config name="HTTP_Request_Inventory_sAPI" doc:name="HTTP Request configuration" doc:id="c257613b-20ed-4ca2-978e-f819b1f33c74" >
+		<http:request-connection host="inventory-system-api-17ekvx.a671fi.gbr-e1.cloudhub.io" />
+	</http:request-config>
+	<configuration-properties doc:name="Configuration properties" doc:id="3becffa8-d633-4792-9e78-10b2fda2854d" file="properties/properties-${env}.yaml" />
+	<http:request-config name="HTTP_Request_Slack" doc:name="HTTP Request configuration" doc:id="b31c7064-5e7e-46cc-955c-3a1484e9b2d8" basePath="/${slack.path}" >
+		<http:request-connection protocol="HTTPS" host="${slack.host}" />
+	</http:request-config>
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="8dbb4c85-839a-4879-8cc2-fd7910788cb8" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<global-property doc:name="Global Property" doc:id="bb69c12a-ffde-4438-b72d-da1ad7aef7be" name="env" value="${env}" />
+	<api-gateway:autodiscovery apiId="${api.id}" ignoreBasePath="true" doc:name="API Autodiscovery" doc:id="4216954a-8499-43f0-a1fc-9fe907ffd309" flowRef="rest-api-health-monitoring" />
+</mule>

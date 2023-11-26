@@ -1,0 +1,22 @@
+#%RAML 1.0
+title: Health Monitoring API
+mediaType: 
+- application/json
+
+uses:
+  common: /exchange_modules/fc9e3283-a489-4e88-99aa-cceea4aa5ea1/gon-common-api-fragments/1.0.4/gon-common-api-fragments.raml
+
+types:
+  Status: !include /datatypes/Status.raml
+
+/status:
+  is: [common.client-id-required, common.error-responses]
+  get:
+    description: Retrieves the health status of all apps/dependencies
+    displayName: Retrieves Apps Health
+    responses:
+      200:
+        body:
+          type: Status
+
+    
