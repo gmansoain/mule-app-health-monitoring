@@ -2,22 +2,23 @@ name: Functional Testing
 on:
   workflow_dispatch:
 
-jobs: functionalTesting
-  runs-on: ubuntu-latest
-  environment: Production
-  steps:
-  - uses: actions/checkout@v4
-    # Install Node on the runner
-  - uses: actions/setup-node@v4
-      with:
-        node-version: 18
-    # Install Newman
-  - name: Install Newman
-     run: |
-        npm install -g newman
-        npm install -g newman-reporter-htmlextra
-    # Run tests
-  - name: Run tests
-      run: |
-        newman run .postman/testing/prod/health-monitoring-api-prod-testing-collection.json -e .postman/testing/prod/health-monitoring-api-prod-testing-environment.json   
-    
+jobs: 
+  functionalTesting:
+    runs-on: ubuntu-latest
+    environment: Production
+    steps:
+    - uses: actions/checkout@v4
+      # Install Node on the runner
+    - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      # Install Newman
+    - name: Install Newman
+       run: |
+          npm install -g newman
+          npm install -g newman-reporter-htmlextra
+      # Run tests
+    - name: Run tests
+        run: |
+          newman run .postman/testing/prod/health-monitoring-api-prod-testing-collection.json -e .postman/testing/prod/health-monitoring-api-prod-testing-environment.json   
+      
