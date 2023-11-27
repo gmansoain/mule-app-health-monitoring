@@ -61,6 +61,11 @@
 			                            <anypoint.platform.visualizer.displayName>${project.name}</anypoint.platform.visualizer.displayName>
 			                            <anypoint.platform.visualizer.layer>${env.api_layer}</anypoint.platform.visualizer.layer>
 			                            <env>${env.app_env}</env>
+						    <schedulerFrequency>30</schedulerFrequency>
+						    <enableSMS>true</enableSMS>
+						    <enableEmail>true</enableEmail>
+						    <enableSlack>true</enableSlack>
+						    <enableWhatsapp>true</enableWhatsapp>
 			                        </properties>
 			                        <deploymentSettings>
 			                            <lastMileSecurity>false</lastMileSecurity>
