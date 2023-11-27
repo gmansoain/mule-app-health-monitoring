@@ -20,5 +20,5 @@ jobs:
       # Run tests
     - name: Run tests
       run: |
-        newman run .postman/testing/prod/health-monitoring-api-prod-testing-collection.json -e .postman/testing/prod/health-monitoring-api-prod-testing-environment.json   
+        newman run .postman/testing/prod/health-monitoring-api-prod-testing-collection.json -e .postman/testing/prod/health-monitoring-api-prod-testing-environment.json -r htmlextra --reporter-htmlextra-export .postman/testing/prod/testsResults/htmlreport.html --reporter-htmlextra-darkTheme > .postman/testing/prod/testsResults/runreport1.html  
       
