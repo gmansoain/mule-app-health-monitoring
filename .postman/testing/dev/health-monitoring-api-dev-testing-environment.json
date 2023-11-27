@@ -16,7 +16,7 @@
 		},
 		{
 			"key": "health-monitoring-papi",
-			"value": "health-monitoring-17ekvx.a671fi.gbr-e1.cloudhub.io",
+			"value": "health-monitoring-dev-17ekvx.a671fi.gbr-e1.cloudhub.io",
 			"type": "default",
 			"enabled": true
 		}
