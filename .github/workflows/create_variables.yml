@@ -1,4 +1,4 @@
-name: Create Project variables
+name: Create Repo variables
 on:
   workflow_dispatch:
 
