@@ -21,4 +21,9 @@ jobs:
     - name: Run tests
       run: |
         newman run .postman/testing/prod/health-monitoring-api-prod-testing-collection.json -e .postman/testing/prod/health-monitoring-api-prod-testing-environment.json -r htmlextra --reporter-htmlextra-export .postman/testing/prod/testResults/htmlreport.html --reporter-htmlextra-darkTheme > .postman/testing/prod/testResults/runreport1.html  
-      
+      # Upload the results
+    - name: Output the run Details
+      uses: actions/upload-artifact@v2
+      with:
+          name: RunReports
+          path: .postman/testing/prod/testResults
